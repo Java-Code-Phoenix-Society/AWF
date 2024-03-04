@@ -41,10 +41,10 @@ public interface JavaAppletAdapter {
      * </p>
      *
      * @param documentBase a {@code String} representing the document base directory where the audio clip is located.
-     * @param s a {@code String} representing the path to the audio clip relative to the document base.
+     * @param fileName a {@code String} representing the file name of the audio clip relative to the document base.
      * @return a {@code Clip} object representing the loaded audio clip, or {@code null} if loading fails.
      */
-    default Clip getAudioClip(String documentBase, String s) {
+    default Clip getAudioClip(String documentBase, String fileName) {
         Clip clip = null;
         if (documentBase.lastIndexOf("\\") != documentBase.length() - 1 ||
                 documentBase.lastIndexOf("/") != documentBase.length() - 1) {
@@ -52,7 +52,7 @@ public interface JavaAppletAdapter {
         }
         try {
             clip = AudioSystem.getClip();
-            String fullPath = documentBase + s;
+            String fullPath = documentBase + fileName;
             clip.open(AudioSystem.getAudioInputStream(new File(fullPath)));
 
         } catch (UnsupportedAudioFileException | LineUnavailableException ex) {
@@ -60,9 +60,9 @@ public interface JavaAppletAdapter {
         } catch (IOException e) {
             try {
                 clip = AudioSystem.getClip();
-                clip.open(AudioSystem.getAudioInputStream(new URL(this.getClass().getResource("/") + s)));
+                clip.open(AudioSystem.getAudioInputStream(new URL(this.getClass().getResource("/") + fileName)));
             } catch (LineUnavailableException | UnsupportedAudioFileException | IOException ex) {
-                System.out.println("getAudioClip error: " + s + "\n" + ex.getMessage());
+                System.out.println("getAudioClip error: " + fileName + "\n" + ex.getMessage());
             }
         }
         return clip;
