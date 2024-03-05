@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.jcps</groupId>
-    <artifactId>AppletWrapperFramework</artifactId>
+    <artifactId>appletwrapperframework</artifactId>
     <version>0.1.2</version>
 
     <pluginRepositories>
