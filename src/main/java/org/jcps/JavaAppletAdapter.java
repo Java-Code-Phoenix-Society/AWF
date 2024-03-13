@@ -9,6 +9,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Objects;
 
 /**
@@ -35,12 +36,13 @@ import java.util.Objects;
  * @since 1.0
  */
 public interface JavaAppletAdapter {
+    public HashMap<String,String> paramMap = new HashMap<>();
     /**
      * Retrieves an audio clip from the specified location relative to the document base.
      * <p>
      * This method attempts to load an audio clip from the specified location {@code s} relative tothe document base {@code documentBase}.
      * It first checks if the document base path ends with a file separator (\ or /), and if not, appends the appropriate file separator.
-     * It then attempts to load the audio clip using {@link javax.sound.sampled.AudioSystem#getClip()}
+     * It then attempts to load the audio clip using {@link AudioSystem#getClip()}
      * and opens it with the audio input stream obtained from the specified file path.
      * If loading the audio clip fails due to unsupported audio file format or unavailability of audio resources,
      * an attempt is made to load the audio clip from the specified location using a URL obtained from
@@ -112,7 +114,7 @@ public interface JavaAppletAdapter {
     }
 
     default Image getImage(String o, String fileName) {
-        java.awt.Image image = null;
+        Image image = null;
         String msg = "";
         boolean loaded = false;
         if (o == null) {
@@ -140,5 +142,8 @@ public interface JavaAppletAdapter {
             System.out.println(msg);
         }
         return image;
+    }
+    default String getParameter(String key) {
+        return paramMap.get(key);
     }
 }
