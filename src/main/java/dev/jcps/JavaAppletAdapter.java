@@ -58,7 +58,7 @@ public interface JavaAppletAdapter {
      */
     default Clip getAudioClip(String documentBase, String fileName) {
         Clip clip = null;
-
+        String errors = "";
         try {
             URL url = new URL(documentBase + fileName);
             // If documentBase is a valid URL, load the audio clip directly from the URL
@@ -78,18 +78,70 @@ public interface JavaAppletAdapter {
                 clip.open(AudioSystem.getAudioInputStream(new File(fullPath)));
             } catch (UnsupportedAudioFileException | LineUnavailableException ex) {
                 // Handle exceptions related to unsupported audio files or unavailable lines
-                System.out.println("ERROR: " + ex.getMessage());
+                errors = "ERROR A1: " + ex.getMessage();
             } catch (IOException ex) {
                 // Handle IO errors
-                System.out.println("IO Error: " + ex.getMessage());
+                errors = "IO Error I1: " + ex.getMessage();
+                clip = tryClipLoad(fileName);
             }
         } catch (UnsupportedAudioFileException | LineUnavailableException ex) {
             // Handle exceptions related to unsupported audio files or unavailable lines
-            System.out.println("ERROR: " + ex.getMessage());
+            errors = "ERROR A2: " + ex.getMessage();
         } catch (IOException ex) {
             // Handle IO errors
-            System.out.println("IO Error: " + ex.getMessage());
+            errors = "IO Error I2: " + ex.getMessage();
+            clip = tryClipLoad(fileName);
         }
+        System.out.printf(errors);
+        return clip;
+    }
+
+    /**
+     * Tries to load an audio clip from the specified location.
+     * <p>
+     * This method attempts to load an audio clip from the specified location {@code s}.
+     * It first checks if the document base path ends with a file separator (\ or /), and if not, appends the appropriate file separator.
+     * It then attempts to load the audio clip using {@link AudioSystem#getClip()}
+     * and opens it with the audio input stream obtained from the specified file path.
+     * If loading the audio clip fails due to unsupported audio file format or unavailability of audio resources,
+     * an attempt is made to load the audio clip from the specified location using a URL obtained from
+     * the class's resource and appending the specified path.
+     *
+     * @param fileName a {@code String} representing the file name of the audio clip relative to the document base.
+     * @return A {@code Clip} object representing the loaded audio clip. If the audio clip cannot be loaded, {@code null} is returned.
+     */
+    private Clip tryClipLoad(String fileName) {
+        Clip clip = null;
+        URL url = null;
+        String errors = "";
+        try {
+            clip = AudioSystem.getClip();
+            url = new URL(this.getClass().getResource("") + fileName);
+            clip.open(AudioSystem.getAudioInputStream(url));
+        } catch (Exception e) {
+            String urlString = "";
+            errors = "ERROR A3: " + this.getClass().getResource("") + fileName + "\n" + e.getMessage();
+            // Find the index of "!/" in the URL
+            try {
+                urlString = url.toString();
+            } catch (Exception ignored) {
+            }
+            int index = urlString.indexOf("!/");
+            if (index != -1) {
+                // Find the last occurrence of "/" before "!/"
+                int lastSlashIndex = urlString.lastIndexOf("/");
+                if (lastSlashIndex != -1) { // If "/" is found before "!/"
+                    String trimmedUrl = urlString.substring(0, index + 1) + urlString.substring(lastSlashIndex);
+                    try {
+                        clip = AudioSystem.getClip();
+                        clip.open(AudioSystem.getAudioInputStream(new URL(trimmedUrl)));
+                    } catch (Exception ex) {
+                        errors = "ERROR A4: " + ex.getMessage();
+                    }
+                }
+            }
+        }
+        System.out.println(errors);
         return clip;
     }
 
