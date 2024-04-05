@@ -1,4 +1,4 @@
-package org.jcps;
+package dev.jcps;
 
 import javax.imageio.ImageIO;
 import javax.sound.sampled.AudioSystem;
@@ -8,6 +8,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Objects;
@@ -36,7 +37,8 @@ import java.util.Objects;
  * @since 1.0
  */
 public interface JavaAppletAdapter {
-    public HashMap<String,String> paramMap = new HashMap<>();
+    public HashMap<String, String> paramMap = new HashMap<>();
+
     /**
      * Retrieves an audio clip from the specified location relative to the document base.
      * <p>
@@ -52,28 +54,41 @@ public interface JavaAppletAdapter {
      *
      * @param documentBase a {@code String} representing the document base directory where the audio clip is located.
      * @param fileName     a {@code String} representing the file name of the audio clip relative to the document base.
-     * @return a {@code Clip} object representing the loaded audio clip, or {@code null} if loading fails.
+     * @return A {@code Clip} object representing the loaded audio clip. If the audio clip cannot be loaded, {@code null} is returned.
      */
     default Clip getAudioClip(String documentBase, String fileName) {
         Clip clip = null;
-        if (documentBase.lastIndexOf("\\") != documentBase.length() - 1 ||
-                documentBase.lastIndexOf("/") != documentBase.length() - 1) {
-            documentBase = documentBase + File.separator;
-        }
-        try {
-            clip = AudioSystem.getClip();
-            String fullPath = documentBase + fileName;
-            clip.open(AudioSystem.getAudioInputStream(new File(fullPath)));
 
-        } catch (UnsupportedAudioFileException | LineUnavailableException ex) {
-            System.out.println("ERROR: " + ex.getMessage());
-        } catch (IOException e) {
+        try {
+            URL url = new URL(documentBase + fileName);
+            // If documentBase is a valid URL, load the audio clip directly from the URL
+            clip = AudioSystem.getClip();
+            clip.open(AudioSystem.getAudioInputStream(url));
+        } catch (MalformedURLException e) {
+            // If documentBase is not a valid URL, treat it as a file path
             try {
+                // Ensure the document base ends with the appropriate file separator
+                if (!documentBase.endsWith(File.separator)) {
+                    documentBase = documentBase + File.separator;
+                }
+
+                // Attempt to load the audio clip from the specified file path
+                String fullPath = documentBase + fileName;
                 clip = AudioSystem.getClip();
-                clip.open(AudioSystem.getAudioInputStream(new URL(this.getClass().getResource("/") + fileName)));
-            } catch (LineUnavailableException | UnsupportedAudioFileException | IOException ex) {
-                System.out.println("getAudioClip error: " + fileName + "\n" + ex.getMessage());
+                clip.open(AudioSystem.getAudioInputStream(new File(fullPath)));
+            } catch (UnsupportedAudioFileException | LineUnavailableException ex) {
+                // Handle exceptions related to unsupported audio files or unavailable lines
+                System.out.println("ERROR: " + ex.getMessage());
+            } catch (IOException ex) {
+                // Handle IO errors
+                System.out.println("IO Error: " + ex.getMessage());
             }
+        } catch (UnsupportedAudioFileException | LineUnavailableException ex) {
+            // Handle exceptions related to unsupported audio files or unavailable lines
+            System.out.println("ERROR: " + ex.getMessage());
+        } catch (IOException ex) {
+            // Handle IO errors
+            System.out.println("IO Error: " + ex.getMessage());
         }
         return clip;
     }
@@ -103,6 +118,12 @@ public interface JavaAppletAdapter {
         return s;
     }
 
+    /**
+     * Returns the code base location of the current class.
+     *
+     * @return The code base location as a {@code java.lang.Object}. If an exception occurs during
+     * retrieval, {@code null} is returned.
+     */
     default Object getCodeBase() {
         Object o = null;
         try {
@@ -113,37 +134,80 @@ public interface JavaAppletAdapter {
         return o;
     }
 
+    /**
+     * Loads an image from either a file path or a resource within the classpath.
+     * <p>
+     * It first checks if the document base path ends with a file separator (\ or /), and if not, appends the appropriate file separator.
+     * It then attempts to load the image from the specified file path using {@link ImageIO#read(File)}.
+     * If loading the image fails, an attempt is made to load the image from the specified location using a URL obtained from
+     * the class's resource and appending the specified path.
+     * If loading the image still fails, an error message is printed to the console.
+     * </p>
+     *
+     * @param o        The base path or directory where the image file is located. Can be {@code null}.
+     * @param fileName The name of the image file.
+     * @return An {@code Image} object representing the loaded image. If the image cannot be loaded,
+     * {@code null} is returned.
+     */
     default Image getImage(String o, String fileName) {
         Image image = null;
         String msg = "";
         boolean loaded = false;
+
+        // If the base path is null, set it to an empty string
         if (o == null) {
             o = "";
         }
+
+        // Ensure the base path ends with a slash
         if (o.lastIndexOf("/") != o.length() - 1) {
             o = o + "/";
         }
-        // 'o' is the absolute path at this point
+
+        // Attempt to load the image from a file
         try {
-            // Try loading the image from a File
             image = ImageIO.read(new File(o + fileName));
             loaded = true;
         } catch (final IOException e) {
             msg = "Failed to load image: " + o + fileName;
             try {
-                // Try loading the image from the packed jar resources
+                // If loading from file fails, attempt to load from the classpath resources
                 image = ImageIO.read(Objects.requireNonNull(this.getClass().getResourceAsStream("/" + fileName)));
                 loaded = true;
             } catch (final Exception ex) {
                 msg += " & couldn't load resource: ";
             }
         }
+
+        // If the image loading fails, print an error message
         if (!msg.isEmpty() && !loaded) {
             System.out.println(msg);
         }
         return image;
     }
+
+    /**
+     * <p>
+     * This method is used to retrieve the value of a specific parameter .
+     * </p>
+     *
+     * @param key a {@code String} representing the name of the parameter to retrieve.
+     * @return String value associated to the {@code key}, or {@code null}
+     */
     default String getParameter(String key) {
         return paramMap.get(key);
+    }
+
+    /**
+     * Replacement function for the applet API {@code showStatus()} method.
+     * <p>
+     * This method is used to display a status message for the application.
+     * The default implementation prints the specified message to the console.
+     * </p>
+     *
+     * @param s the status message to be displayed.
+     */
+    default void showStatus(String s) {
+        System.out.println(s);
     }
 }

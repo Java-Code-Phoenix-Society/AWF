@@ -1,4 +1,4 @@
-package org.jcps;
+package dev.jcps;
 
 import java.util.HashMap;
 
@@ -26,7 +26,7 @@ public class AppletParameters {
      * Constructs a {@code AppletParameters} object and initialises it with a blank HashMap,
      * represented as key-value pairs in the {@code paramMap}.
      */
-    AppletParameters() {
+    public AppletParameters() {
         paramMap = new HashMap<>();
     }
 
@@ -36,7 +36,7 @@ public class AppletParameters {
      *
      * @param hashMap The HashMap containing key-value pairs representing various parameters.
      */
-    AppletParameters(HashMap<String, String> hashMap) {
+    public AppletParameters(HashMap<String, String> hashMap) {
         paramMap = new AppletParameters().paramMap;
         paramMap.putAll(hashMap);
     }
@@ -49,7 +49,9 @@ public class AppletParameters {
      * @throws NumberFormatException If the value associated with the key cannot be parsed as an integer.
      */
     public int getInt(String key) {
-        return Integer.parseInt(paramMap.get(key));
+        String value = paramMap.get(key);
+        if (value == null) return 0;
+        return Integer.parseInt(value);
     }
 
     /**
