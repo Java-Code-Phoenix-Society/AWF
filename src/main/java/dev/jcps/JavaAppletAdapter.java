@@ -190,9 +190,7 @@ public interface JavaAppletAdapter {
             } catch (Exception e) {
                 p = "/";
             }
-
-            p = p.substring(0, p.lastIndexOf("!/") + 2);
-            o = p;
+            o = p.substring(0, p.lastIndexOf("!/") + 2);
         }
         return o;
     }
