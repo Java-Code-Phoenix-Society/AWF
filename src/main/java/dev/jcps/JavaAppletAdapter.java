@@ -37,7 +37,7 @@ import java.util.Objects;
  * @since 1.0
  */
 public interface JavaAppletAdapter {
-    public HashMap<String, String> paramMap = new HashMap<>();
+    HashMap<String, String> paramMap = new HashMap<>();
 
     /**
      * Retrieves an audio clip from the specified location relative to the document base.
@@ -123,7 +123,7 @@ public interface JavaAppletAdapter {
             errors = "ERROR A3: " + this.getClass().getResource("") + fileName + "\n" + e.getMessage();
             // Find the index of "!/" in the URL
             try {
-                urlString = url.toString();
+                urlString = Objects.requireNonNull(url).toString();
             } catch (Exception ignored) {
             }
             int index = urlString.indexOf("!/");
@@ -182,6 +182,17 @@ public interface JavaAppletAdapter {
             o = this.getClass().getResource("/");
         } catch (final Exception e) {
             System.out.println("Exception: " + e.getMessage());
+        }
+        if (o == null) {
+            String p;
+            try {
+               p = Objects.requireNonNull(this.getClass().getResource("")).toString();
+            } catch (Exception e) {
+                p = "/";
+            }
+
+            p = p.substring(0, p.lastIndexOf("!/") + 2);
+            o = p;
         }
         return o;
     }
