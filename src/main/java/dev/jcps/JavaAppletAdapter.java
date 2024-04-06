@@ -230,11 +230,21 @@ public interface JavaAppletAdapter {
             image = ImageIO.read(new File(o + fileName));
             loaded = true;
         } catch (final IOException e) {
-            msg = "Failed to load image: " + o + fileName;
+            msg = "Failure loading image file: " + o + fileName;
             try {
                 // If loading from file fails, attempt to load from the classpath resources
                 image = ImageIO.read(Objects.requireNonNull(this.getClass().getResourceAsStream("/" + fileName)));
                 loaded = true;
+            } catch (NullPointerException ex) {
+                try {
+                    // try loading as URL
+                    image = ImageIO.read(new URL(o + fileName));
+                    loaded = true;
+                } catch (MalformedURLException exception) {
+                    msg += " & unusable URL";
+                } catch (IOException exception) {
+                    msg += " & couldn't load URL";
+                }
             } catch (final Exception ex) {
                 msg += " & couldn't load resource: ";
             }

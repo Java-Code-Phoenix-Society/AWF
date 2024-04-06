@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import javax.sound.sampled.Clip;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -111,13 +112,50 @@ public class JavaAppletAdapterTest {
     }
 
     @Test
+    public void test_getCB_noSlash() {
+        String o = "";
+        try {
+            o = String.valueOf(this.getClass().getResource(""));
+        } catch (final Exception e) {
+            System.out.println("Exception: " + e.getMessage());
+        }
+        String cb = t.getCodeBase().toString();
+        assertEquals(o, cb);
+    }
+
+
+    @Test
     public void test_getImage() {
-        // can't load images from URLs
         String testImg = "https://jcps.dev/assets/jcps-logo.png";
         Image img = t.getImage(testImg.substring(0, testImg.lastIndexOf("/") + 1),
+                testImg.substring(testImg.lastIndexOf("/") + 1) + "\\");
+        assertNull(img);
+    }
+
+    @Test
+    public void test_getImage_nullPath() {
+        String testImg = "https://jcps.dev/assets/jcps-logo.png";
+        Image img = t.getImage(null,
                 testImg.substring(testImg.lastIndexOf("/") + 1));
         assertNull(img);
     }
+
+    @Test
+    public void test_getImage_path() {
+        // can load images from URLs as base
+        String testImg = "jcps-logo.png";
+        Image img = t.getImage("https://jcps.dev/assets", testImg);
+        assertNotNull(img);
+    }
+
+    @Test
+    public void test_getImage_nothing() {
+        // can load images from URLs as base
+        String testImg = "png";
+        Image img = t.getImage("", testImg);
+        assertNull(img);
+    }
+
 
     @Test
     public void testCheckDir() {
@@ -131,6 +169,27 @@ public class JavaAppletAdapterTest {
         String c = t.getDocumentBase();
 
         assertEquals(s, c);
+    }
+
+    @Test
+    void testLoadFromUrl() {
+        String fileName = "https://jcps.dev/assets/jcps-logo.png";
+        String basePath = "";
+
+        Image image = t.getImage(basePath, fileName);
+
+        assertNotNull(image);
+        assertInstanceOf(BufferedImage.class, image);
+    }
+
+    @Test
+    void testFailureMessage() {
+        String fileName = "invalid.png";
+        String basePath = "";
+
+        Image image = t.getImage(basePath, fileName);
+
+        assertNull(image);
     }
 
     static class jpTest extends JPanel implements JavaAppletAdapter {
